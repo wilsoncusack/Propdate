@@ -48,6 +48,7 @@ contract Propdates {
         emit PropUpdateAdminTransfered(propId, oldAdmin, newAdmin);
     }
 
+    /// NOTE we could restrict this to successfully funded props only, but maybe fine/interesting to leave open?
     function postUpdate(uint256 propId, string calldata update) onlyPropUpdateAdmin(propId) external {
         emit PostUpdate(propId, update);
     }
