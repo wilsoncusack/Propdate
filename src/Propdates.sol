@@ -15,6 +15,7 @@ contract Propdates {
     event PostUpdate(uint256 indexed propId, string update);
 
     error OnlyPropUpdateAdmin();
+    error OnlyPendingPropUpdateAdmin();
 
     modifier onlyPropUpdateAdmin(uint256 propId) {
         if(msg.sender != propUpdateAdmin[propId]) {
@@ -23,7 +24,7 @@ contract Propdates {
         _;
     }
 
-    function transferPropUpdateAdminPower(uint256 propId, address _newAdmin) external {
+    function transferPropUpdateAdminPower(uint256 propId, address newAdmin) external {
         address currentAdmin = propUpdateAdmin[propId];
         if (
             msg.sender != currentAdmin
@@ -31,21 +32,22 @@ contract Propdates {
         ) {
             revert OnlyPropUpdateAdmin();
         }
-        pendingPropUpdateAdmin[propId] = _newAdmin;
+        pendingPropUpdateAdmin[propId] = newAdmin;
 
-        emit PropUpdateAdminTransferStarted(propId, currentAdmin, _newAdmin);
+        emit PropUpdateAdminTransferStarted(propId, currentAdmin, newAdmin);
     }
 
     function acceptPropUpdateAdminPower(uint256 propId) external {
-        require(msg.sender == pendingPropUpdateAdmin[propId]);
+        if(msg.sender != pendingPropUpdateAdmin[propId]) {
+            revert OnlyPendingPropUpdateAdmin();
+        }
+
+        delete pendingPropUpdateAdmin[propId];
 
         address oldAdmin = propUpdateAdmin[propId];
-        address newAdmin = pendingPropUpdateAdmin[propId];
+        propUpdateAdmin[propId] = msg.sender;
 
-        propUpdateAdmin[propId] = newAdmin;
-        pendingPropUpdateAdmin[propId] = address(0);
-
-        emit PropUpdateAdminTransfered(propId, oldAdmin, newAdmin);
+        emit PropUpdateAdminTransfered(propId, oldAdmin, msg.sender);
     }
 
     /// NOTE we could restrict this to successfully funded props only, but maybe fine/interesting to leave open?
