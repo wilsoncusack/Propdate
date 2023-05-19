@@ -6,10 +6,14 @@ import "lib/nouns-monorepo/packages/nouns-contracts/contracts/governance/NounsDA
 
 contract Propdates {
     struct PropdateInfo {
+        // who can post updates for this prop
         address propUpdateAdmin;
-        uint96 lastUpdated;
+        // when was the last update posted
+        uint88 lastUpdated;
+        // is the primary work of the proposal considered done
+        bool isCompleted;
     }
-    
+
     address payable public constant NOUNS_DAO = payable(0x6f3E6272A167e8AcCb32072d08E0957F9c79223d);
 
     mapping(uint256 => PropdateInfo) public propdateInfo;
@@ -17,7 +21,7 @@ contract Propdates {
 
     event PropUpdateAdminTransferStarted(uint256 indexed propId, address indexed oldAdmin, address indexed newAdmin);
     event PropUpdateAdminTransfered(uint256 indexed propId, address indexed oldAdmin, address indexed newAdmin);
-    event PostUpdate(uint256 indexed propId, string update);
+    event PostUpdate(uint256 indexed propId, bool indexed isCompleted, string update);
 
     error OnlyPropUpdateAdmin();
     error OnlyPendingPropUpdateAdmin();
@@ -43,7 +47,7 @@ contract Propdates {
         _acceptPropUpdateAdminPower(propId);
     }
 
-    function postUpdate(uint256 propId, string calldata update) external {
+    function postUpdate(uint256 propId, bool isCompleted, string calldata update) external {
         if (msg.sender != propdateInfo[propId].propUpdateAdmin) {
             if (msg.sender == pendingPropUpdateAdmin[propId]) {
                 _acceptPropUpdateAdminPower(propId);
@@ -52,8 +56,12 @@ contract Propdates {
             }
         }
 
-        propdateInfo[propId].lastUpdated = uint96(block.timestamp);
-        emit PostUpdate(propId, update);
+        propdateInfo[propId].lastUpdated = uint88(block.timestamp);
+        // only set this value if true, so that it can't be unset
+        if (isCompleted) {
+            propdateInfo[propId].isCompleted = true;
+        }
+        emit PostUpdate(propId, isCompleted, update);
     }
 
     function _acceptPropUpdateAdminPower(uint256 propId) internal {
