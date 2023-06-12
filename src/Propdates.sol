@@ -14,20 +14,27 @@ contract Propdates {
         bool isCompleted;
     }
 
-    address payable public constant NOUNS_DAO = payable(0x6f3E6272A167e8AcCb32072d08E0957F9c79223d);
-
-    mapping(uint256 => PropdateInfo) public propdateInfo;
-    mapping(uint256 => address) public pendingPropUpdateAdmin;
-
     event PropUpdateAdminTransferStarted(uint256 indexed propId, address indexed oldAdmin, address indexed newAdmin);
     event PropUpdateAdminTransfered(uint256 indexed propId, address indexed oldAdmin, address indexed newAdmin);
     event PostUpdate(uint256 indexed propId, bool indexed isCompleted, string update);
 
     error OnlyPropUpdateAdmin();
     error OnlyPendingPropUpdateAdmin();
+    error NoZeroAddress();
 
-    function transferPropUpdateAdminPower(uint256 propId, address newAdmin) external {
-        address currentAdmin = propdateInfo[propId].propUpdateAdmin;
+    address payable public constant NOUNS_DAO = payable(0x6f3E6272A167e8AcCb32072d08E0957F9c79223d);
+
+    mapping(uint256 => address) public pendingPropUpdateAdmin;
+    mapping(uint256 => PropdateInfo) internal _propdateInfo;
+
+    function transferPropUpdateAdmin(uint256 propId, address newAdmin) external {
+        if (newAdmin == address(0)) {
+            // block transferring to zero address because it creates a weird state
+            // where the prop proposer has control again
+            revert NoZeroAddress();
+        }
+
+        address currentAdmin = _propdateInfo[propId].propUpdateAdmin;
         if (
             msg.sender != currentAdmin
                 && !(currentAdmin == address(0) && NounsDAOLogicV2(NOUNS_DAO).proposals(propId).proposer == msg.sender)
@@ -39,36 +46,43 @@ contract Propdates {
         emit PropUpdateAdminTransferStarted(propId, currentAdmin, newAdmin);
     }
 
-    function acceptPropUpdateAdminPower(uint256 propId) external {
+    function acceptPropUpdateAdmin(uint256 propId) external {
         if (msg.sender != pendingPropUpdateAdmin[propId]) {
             revert OnlyPendingPropUpdateAdmin();
         }
 
-        _acceptPropUpdateAdminPower(propId);
+        _acceptPropUpdateAdmin(propId);
     }
 
     function postUpdate(uint256 propId, bool isCompleted, string calldata update) external {
-        if (msg.sender != propdateInfo[propId].propUpdateAdmin) {
+        if (msg.sender != _propdateInfo[propId].propUpdateAdmin) {
             if (msg.sender == pendingPropUpdateAdmin[propId]) {
-                _acceptPropUpdateAdminPower(propId);
+                // don't love the side effect here, but it saves a tx and so seems worth it?
+                // could also just make it multicallable 
+                _acceptPropUpdateAdmin(propId);
             } else {
                 revert OnlyPropUpdateAdmin();
             }
         }
 
-        propdateInfo[propId].lastUpdated = uint88(block.timestamp);
+        _propdateInfo[propId].lastUpdated = uint88(block.timestamp);
         // only set this value if true, so that it can't be unset
         if (isCompleted) {
-            propdateInfo[propId].isCompleted = true;
+            _propdateInfo[propId].isCompleted = true;
         }
+        
         emit PostUpdate(propId, isCompleted, update);
     }
 
-    function _acceptPropUpdateAdminPower(uint256 propId) internal {
+    function propdateInfo(uint256 propId) external view returns (PropdateInfo memory) {
+        return _propdateInfo[propId];
+    }
+
+    function _acceptPropUpdateAdmin(uint256 propId) internal {
         delete pendingPropUpdateAdmin[propId];
 
-        address oldAdmin = propdateInfo[propId].propUpdateAdmin;
-        propdateInfo[propId].propUpdateAdmin = msg.sender;
+        address oldAdmin = _propdateInfo[propId].propUpdateAdmin;
+        _propdateInfo[propId].propUpdateAdmin = msg.sender;
 
         emit PropUpdateAdminTransfered(propId, oldAdmin, msg.sender);
     }
