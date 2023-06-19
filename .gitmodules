@@ -4,3 +4,6 @@
 [submodule "lib/nouns-monorepo"]
 	path = lib/nouns-monorepo
 	url = https://github.com/nounsDAO/nouns-monorepo
+[submodule "lib/solady"]
+	path = lib/solady
+	url = https://github.com/vectorized/solady
