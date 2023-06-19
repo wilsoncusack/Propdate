@@ -29,6 +29,9 @@ contract Propdates {
     mapping(uint256 => address) public pendingPropUpdateAdmin;
     mapping(uint256 => PropdateInfo) internal _propdateInfo;
 
+    // allow receiving ETH for gas refunds
+    receive() external payable {}
+
     /// @notice Transfers prop update admin power to a new address
     /// @dev reverts if the new admin is the zero address
     /// @dev if current admin is zero address, reverts unless msg.sender is prop proposer

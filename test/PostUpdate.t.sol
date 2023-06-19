@@ -75,7 +75,8 @@ contract PostUpdateTest is PropdatesBaseTest {
 
     function testGasRefundWhenProposalExecuted() public {
         vm.txGasPrice(2);
-        vm.deal(address(propdates), 10e18);
+        vm.deal(address(this), 10e18);
+        payable(address(propdates)).send(10e18);
         propId = 284;
         address admin = address(0xb0b);
         vm.deal(address(admin), 10e18);
