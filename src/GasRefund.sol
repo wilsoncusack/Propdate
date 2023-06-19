@@ -14,9 +14,7 @@ library GasRefund {
     /// @notice The maximum basefee the DAO will refund voters on
     uint256 public constant MAX_REFUND_BASE_FEE = 200 gwei;
 
-    event Refunded(address to, uint256 refund);
     // modified, from https://github.com/nounsDAO/nouns-monorepo/blob/master/packages/nouns-contracts/contracts/governance/NounsDAOLogicV2.sol#LL1033C4-L1033C4
-
     function refundGas(uint256 startGas) internal {
         unchecked {
             uint256 balance = address(this).balance;
@@ -30,7 +28,6 @@ library GasRefund {
             // we do not care if this reverts
             // gas account is already done and update posted
             tx.origin.call{value: refundAmount}("");
-            emit Refunded(tx.origin, refundAmount);
         }
     }
 
