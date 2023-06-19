@@ -5,7 +5,7 @@ import "src/Propdates.sol";
 import "./PropdatesBase.t.sol";
 
 contract TransferPropUpdateAdminTest is PropdatesBaseTest {
-    function testSetsPendingPropAdmin() public { 
+    function testSetsPendingPropAdmin() public {
         assertEq(address(0), propdates.propdateInfo(propId).propUpdateAdmin);
         vm.prank(nounsDAO.proposals(propId).proposer);
         address newAdmin = address(0xb0b);
@@ -16,7 +16,7 @@ contract TransferPropUpdateAdminTest is PropdatesBaseTest {
 
     event PropUpdateAdminTransferStarted(uint256 indexed propId, address indexed oldAdmin, address indexed newAdmin);
 
-    function testEmitsPropUpdateAdminTransferStarted() public { 
+    function testEmitsPropUpdateAdminTransferStarted() public {
         assertEq(address(0), propdates.propdateInfo(propId).propUpdateAdmin);
         vm.prank(nounsDAO.proposals(propId).proposer);
         address newAdmin = address(0xb0b);
@@ -26,27 +26,26 @@ contract TransferPropUpdateAdminTest is PropdatesBaseTest {
         propdates.transferPropUpdateAdmin(propId, newAdmin);
     }
 
-
-    function testAllowsProposerIfCurrentAdminZero() public { 
+    function testAllowsProposerIfCurrentAdminZero() public {
         assertEq(address(0), propdates.propdateInfo(propId).propUpdateAdmin);
         vm.prank(nounsDAO.proposals(propId).proposer);
         propdates.transferPropUpdateAdmin(propId, address(0xb0b));
     }
 
-    function testRevertsIfNewAdminZero() public { 
+    function testRevertsIfNewAdminZero() public {
         assertEq(address(0), propdates.propdateInfo(propId).propUpdateAdmin);
         vm.prank(nounsDAO.proposals(propId).proposer);
         vm.expectRevert(Propdates.NoZeroAddress.selector);
         propdates.transferPropUpdateAdmin(propId, address(0));
     }
 
-    function testRevertsIfNotProposerAndAddressZero() public { 
+    function testRevertsIfNotProposerAndAddressZero() public {
         assertEq(address(0), propdates.propdateInfo(propId).propUpdateAdmin);
         vm.expectRevert(Propdates.OnlyPropUpdateAdmin.selector);
         propdates.transferPropUpdateAdmin(propId, address(0xb0b));
     }
 
-    function testAllowsCurrentAdmin() public { 
+    function testAllowsCurrentAdmin() public {
         address newAdmin = address(0xb0b);
         vm.prank(nounsDAO.proposals(propId).proposer);
         propdates.transferPropUpdateAdmin(propId, newAdmin);
@@ -55,7 +54,7 @@ contract TransferPropUpdateAdminTest is PropdatesBaseTest {
         propdates.transferPropUpdateAdmin(propId, address(0xb0));
     }
 
-    function testRevertsIfNotCurrentAdmin() public { 
+    function testRevertsIfNotCurrentAdmin() public {
         address newAdmin = address(0xb0b);
         vm.prank(nounsDAO.proposals(propId).proposer);
         propdates.transferPropUpdateAdmin(propId, newAdmin);

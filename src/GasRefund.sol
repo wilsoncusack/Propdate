@@ -1,4 +1,5 @@
-pragma solidity ^0.8.4;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
 
 library GasRefund {
     /// @notice The maximum priority fee used to cap gas refunds in `castRefundableVote`
@@ -13,8 +14,10 @@ library GasRefund {
     /// @notice The maximum basefee the DAO will refund voters on
     uint256 public constant MAX_REFUND_BASE_FEE = 200 gwei;
 
-    // from https://github.com/nounsDAO/nouns-monorepo/blob/master/packages/nouns-contracts/contracts/governance/NounsDAOLogicV2.sol#LL1033C4-L1033C4
-    function _refundGas(uint256 startGas) internal {
+    event Refunded(address to, uint256 refund);
+    // modified, from https://github.com/nounsDAO/nouns-monorepo/blob/master/packages/nouns-contracts/contracts/governance/NounsDAOLogicV2.sol#LL1033C4-L1033C4
+
+    function refundGas(uint256 startGas) internal {
         unchecked {
             uint256 balance = address(this).balance;
             if (balance == 0) {
@@ -24,7 +27,10 @@ library GasRefund {
             uint256 gasPrice = min(tx.gasprice, basefee + MAX_REFUND_PRIORITY_FEE);
             uint256 gasUsed = min(startGas - gasleft() + REFUND_BASE_GAS, MAX_REFUND_GAS_USED);
             uint256 refundAmount = min(gasPrice * gasUsed, balance);
-            tx.origin.call{ value: refundAmount }('');
+            // we do not care if this reverts
+            // gas account is already done and update posted
+            tx.origin.call{value: refundAmount}("");
+            emit Refunded(tx.origin, refundAmount);
         }
     }
 
